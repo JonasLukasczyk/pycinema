@@ -86,8 +86,10 @@ class DepthCompositing(Filter):
             result.channels[c] = data
 
         for m in B.meta:
+            print(m)
             if m not in A.meta:
                 result.meta[m] = b.meta[m]
+            print('x',m)
 
         for m in A.meta:
             if m in B.meta:

@@ -6,3 +6,4 @@ from .SelectionView import SelectionView
 from .TableView import TableView
 from .ParallelCoordinatesView import ParallelCoordinatesView
 from .NodeView import NodeView
+from .InspectorView import InspectorView

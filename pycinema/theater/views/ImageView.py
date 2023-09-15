@@ -71,6 +71,10 @@ class _ImageViewer(QtWidgets.QGraphicsView):
         if event.key()==32:
             self.fitInView()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.fitInView()
+
 class ImageView(Filter, FilterView):
 
     def __init__(self):
@@ -112,5 +116,4 @@ class ImageView(Filter, FilterView):
           c = i-r*nCols
           self.view.addImage(image,c*max_w,r*max_h)
 
-        self.view.fitInView()
         return 1

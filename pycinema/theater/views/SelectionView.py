@@ -2,12 +2,9 @@ from PySide6 import QtCore, QtWidgets, QtGui
 
 from pycinema.theater.View import View
 
+from pycinema.theater import views
+from pycinema.theater.views.FilterView import FilterView
 from pycinema.theater.views.NodeView import NodeView
-from pycinema.theater.views.TableView import TableView
-from pycinema.theater.views.ImageView import ImageView
-from pycinema.theater.views.ParameterView import ParameterView
-from pycinema.theater.views.ColorMappingView import ColorMappingView
-from pycinema.theater.views.ParallelCoordinatesView import ParallelCoordinatesView
 
 class SelectionButton(QtWidgets.QPushButton):
   def __init__(self,name,parent,cls):
@@ -25,7 +22,11 @@ class SelectionView(View):
 
     self.content.layout().addWidget(QtWidgets.QLabel(),1)
 
-    for cls in [NodeView,TableView,ImageView,ParameterView,ColorMappingView,ParallelCoordinatesView]:
+    view_list = [cls for name, cls in views.__dict__.items() if isinstance(cls,type) and issubclass(cls,FilterView) and name!='FilterView']
+    view_list.sort(key=lambda x: x.__name__)
+    view_list.insert(0,NodeView)
+
+    for cls in view_list:
       self.layout().addWidget( SelectionButton(cls.__name__, self, cls) )
 
     self.layout().addWidget(QtWidgets.QLabel(),1)

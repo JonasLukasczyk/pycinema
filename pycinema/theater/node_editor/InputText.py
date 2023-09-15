@@ -37,7 +37,7 @@ class InputText(QtWidgets.QWidget):
             self.edit.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
             self.edit.setStyleSheet('border:0;background:transparent;color:'+NES.COLOR_NORMAL_)
             self.edit.setReadOnly(False)
-            self.edit.textEdited.connect(lambda text: self.setValue(text))
+            self.edit.editingFinished.connect(lambda: self.setValue(self.edit.text()))
             self.layout().addWidget(self.edit,1)
             port.on('value_set', self.update_callback)
             self.updateWidget()

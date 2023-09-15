@@ -112,8 +112,23 @@ class QtNodeView(QtWidgets.QGraphicsView):
         if not node_a or not node_b or (not force and not QtNodeView.auto_connect):
             return
 
-        for o_portName, o_port in node_a.filter.outputs.ports():
-            for i_portName, i_port in node_b.filter.inputs.ports():
+        node_a_ports = node_a.filter.outputs.ports()
+        node_b_ports = node_b.filter.inputs.ports()
+
+        if len(node_b_ports)==1:
+          for o_portName, o_port in node_a_ports:
+              for i_portName, i_port in node_b_ports:
+                  bridge_ports = list(o_port.connections)
+                  i_port.set(o_port)
+                  for bridge_port in bridge_ports:
+                      if bridge_port.parent==node_b.filter: continue
+                      for o_portName_, o_port_ in node_b.filter.outputs.ports():
+                          if bridge_port.name == o_portName_:
+                              bridge_port.set(o_port_)
+                  return
+
+        for o_portName, o_port in node_a_ports:
+            for i_portName, i_port in node_b_ports:
                 if o_portName==i_portName:
                     bridge_ports = list(o_port.connections)
                     i_port.set(o_port)
@@ -276,7 +291,7 @@ class QtNodeView(QtWidgets.QGraphicsView):
             for i, f in enumerate(vertices):
                 node = QtNodeView.node_map[f]
                 coords = layout[i]
-                QtNodeView.node_map[f].target = QtCore.QPointF(coords[1]*scale,-coords[0]*scale*0.7)
+                QtNodeView.node_map[f].target = QtCore.QPointF(coords[1]*scale,coords[0]*scale*0.7)
 
             for f in L:
                 if not f in edgesR:
