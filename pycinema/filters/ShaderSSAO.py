@@ -102,7 +102,7 @@ void main(){
     def render(self,image):
         # update texture
         self.rgbaTex.write(image.channels['rgba'].tobytes())
-        self.depthTex.write(image.channels['depth'].tobytes())
+        self.depthTex.write(image.channels['Depth'].tobytes())
 
         # render
         self.fbo.clear(0.0, 0.0, 0.0, 1.0)
@@ -124,7 +124,7 @@ void main(){
 
         # first image
         image0 = images[0]
-        if not 'depth' in image0.channels or not 'rgba' in image0.channels:
+        if not 'Depth' in image0.channels or not 'rgba' in image0.channels:
             self.outputs.images.set(images)
             return 1
 

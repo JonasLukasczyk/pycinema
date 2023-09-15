@@ -17,3 +17,5 @@ from .ShaderPBR import *
 from .ShaderPhong import *
 from .Shader import *
 from .ShaderSSAO import *
+from .ShaderLineAO import *
+from .ShaderPointAO import *

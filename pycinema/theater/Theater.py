@@ -93,10 +93,11 @@ import pycinema.theater.views
 
         script_file_name = QtWidgets.QFileDialog.getSaveFileName(self, "Save Script")
         if len(script_file_name[0])>0:
+            script_file_name = script_file_name[0]
             if not script_file_name.endswith('.py'):
                 script_file_name += '.py'
             try:
-                f = open(script_file_name[0], "w")
+                f = open(script_file_name, "w")
                 f.write(script)
                 f.close()
             except:
@@ -251,7 +252,7 @@ ImageView_0.inputs.images.set(ImageAnnotation_0.outputs.images, False)
           if self.centralWidget().count()<1:
             self.centralWidget().insertView(0,NodeView())
           return
-        QtCore.QTimer.singleShot(5000, lambda: call())
+        QtCore.QTimer.singleShot(0, lambda: call())
 
         # namespace = {}
         # lines = script.splitlines()
