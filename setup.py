@@ -38,6 +38,7 @@ setuptools.setup(
         "requests",
         "pyqtgraph",
         "tensorflow",
+        "tqdm",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

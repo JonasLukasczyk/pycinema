@@ -12,6 +12,7 @@ from .ImageBorder import *
 from .ImageCanny import *
 from .ImageConvertGrayscale import *
 from .ImageFilterPIL import *
+from .ImageInterpolator import *
 from .ImageReader import *
 from .ImageSort import *
 from .ImagesToTable import *
@@ -42,3 +43,4 @@ from .ParametersView import *
 from .ParallelCoordinates import *
 from .InspectorView import *
 from .ValueSource import *
+from .VideoWriter import *

@@ -92,6 +92,8 @@ class ImageAnnotation(Filter):
                         text = text + ' ' + t+': '+str(m[0])+'\n'
                     else:
                         text = text + ' ' + t+': ['+', '.join([str(x) for x in m])+']\n'
+                elif isinstance(m, float):
+                    text = text + ' ' + t+': '+f'{m:9.2f}' + '\n'
                 else:
                     text = text + ' ' + t+': '+str(m) + '\n'
 
