@@ -24,7 +24,7 @@ setuptools.setup(
     packages=[  "pycinema", "pycinema.filters", "pycinema.scripts", "pycinema.theater", "pycinema.theater.node_editor", "pycinema.theater.views", "pycinema.ipy" ],
     install_requires=[
         "numpy<2.0.0",
-        "scipy==1.13.1",
+        "scipy",
         "h5py",
         "matplotlib",
         "py",
@@ -38,6 +38,8 @@ setuptools.setup(
         "requests",
         "pyqtgraph",
         "tensorflow",
+	"torch",
+	"torchvision",
         "tqdm",
     ],
     classifiers=[

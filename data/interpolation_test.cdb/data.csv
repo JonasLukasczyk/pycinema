@@ -1,3 +1,5 @@
-time,FILE
-0,a.png
-1,b.png
+type,time,FILE
+0,0,a.png
+0,1,b.png
+1,0,aa.png
+1,1,bb.png
