@@ -2,6 +2,8 @@
 import { useDialogPluginComponent } from 'quasar';
 import { reactive, onMounted, ref, nextTick } from 'vue';
 
+import WebSocketCommunicator from './WebSocketCommunicator.js'
+
 const canvasContainer = ref(null);
 
 const props = defineProps({
@@ -18,13 +20,11 @@ defineEmits([
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-const init = ()=>{
+const init = async ()=>{
 
-  const values = Array.isArray(props.port.value) ? props.port.value : [props.port.value];
+  const msg = await WebSocketCommunicator.sendMessageAsync('get_port_value',props.port);
 
-  for(let image of values){
-    if(!image.hasOwnProperty('channels')) continue;
-
+  for(let image of msg.payload.value){
     const canvas = document.createElement('canvas');
     canvasContainer._value.appendChild(canvas);
 
@@ -49,6 +49,39 @@ const init = ()=>{
     imageData.data.set(pixelArray);
     ctx.putImageData(imageData, 0, 0);
   }
+
+  // const values = Array.isArray(props.port.value) ? props.port.value : [props.port.value];
+
+  // for(let image of values){
+  //   if(!image.hasOwnProperty('channels')) continue;
+
+  //   const msg = await WebSocketCommunicator.sendMessageAsync('get_port_value',props.port);
+  //   const
+
+  //   const canvas = document.createElement('canvas');
+  //   canvasContainer._value.appendChild(canvas);
+
+  //   const pixelData = image.channels.rgba;
+
+  //   const ctx = canvas.getContext('2d');
+  //   const rows = pixelData.length;
+  //   const cols = pixelData[0].length;
+
+  //   canvas.width = cols;
+  //   canvas.height = rows;
+
+  //   const imageData = ctx.createImageData(cols, rows);
+
+  //   let pixelArray = [];
+  //   for (let row = 0; row < rows; row++) {
+  //     for (let col = 0; col < cols; col++) {
+  //       const rgba = pixelData[row][col];
+  //       pixelArray.push(...rgba);
+  //     }
+  //   }
+  //   imageData.data.set(pixelArray);
+  //   ctx.putImageData(imageData, 0, 0);
+  // }
 };
 
 onMounted(async ()=>{

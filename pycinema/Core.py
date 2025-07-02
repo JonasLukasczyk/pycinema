@@ -239,16 +239,24 @@ class Image():
     def resolution(self):
         return self.shape[:2][::-1]
 
-    def toJSON(self):
+    def toJSON(self,level=0):
       data = {'meta':{},'channels':{}}
-      for g in data:
-        g_ = getattr(self,g)
-        for id in g_:
-          try:
-            json.dumps(g_[id])
-            data[g][id] = g_[id]
-          except TypeError:
-            data[g][id] = g_[id].tolist()
+      if level<1:
+        for key in self.meta:
+          data['meta'][key] = None
+        for c in self.channels:
+          data['channels'][c] = {
+            'shape': self.channels[c].shape
+          }
+      else:
+        for g in data:
+          g_ = getattr(self,g)
+          for id in g_:
+            try:
+              json.dumps(g_[id])
+              data[g][id] = g_[id]
+            except TypeError:
+              data[g][id] = g_[id].tolist()
 
       return data
 
@@ -373,7 +381,7 @@ class Port():
         if self.is_input and update and not Filter._processing:
             asyncio.create_task(self.parent.update())
 
-    def toJSON(self):
+    def toJSON(self,level=0):
       value_raw = self.get()
 
       try:
@@ -381,13 +389,13 @@ class Port():
         value = value_raw
       except TypeError:
         if hasattr(value_raw, 'toJSON'):
-          value = value_raw.toJSON()
+          value = value_raw.toJSON(level)
         else:
           if isinstance(value_raw, list):
             value = []
             for item in value_raw:
               if hasattr(item, 'toJSON'):
-                value.append(item.toJSON())
+                value.append(item.toJSON(level))
               else:
                 value.append(str(item))
 
@@ -513,7 +521,7 @@ class Filter():
         self.trigger('filter_deleted',self)
 
         # update pipeline
-        self.update()
+        asyncio.create_task(self.update())
 
     def _update(self):
         # needs to be overriden
@@ -587,7 +595,7 @@ class Filter():
                     needsUpdate = True
             if f==self or needsUpdate:
                 t0 = time.time()
-                await Filter.triggerAsync('filter_status',[f.id,0])
+                await Filter.triggerAsync('filter_status',[f.id,1])
                 if Filter._debug:
                     print('PROCESS',f)
                 try:
@@ -595,7 +603,7 @@ class Filter():
                 except Exception:
                     traceback.print_exc()
                     Filter._processing = False
-                    await Filter.triggerAsync('filter_status',[f.id,2])
+                    await Filter.triggerAsync('filter_status',[f.id,3,traceback.format_exc()])
                     await Filter.triggerAsync('update_status',1)
                     return 0
                 f.time = time.time()
@@ -604,7 +612,7 @@ class Filter():
                     print(" -> Done (%.2fs)" % (f.time-t0))
             elif Filter._debug:
                 print('SKIP',f)
-            await Filter.triggerAsync('filter_status',[f.id,1])
+            await Filter.triggerAsync('filter_status',[f.id,2])
 
         Filter._processing = False
         await Filter.triggerAsync('update_status',1)
@@ -613,10 +621,10 @@ class Filter():
     def help(self):
         print('Documentation Missing')
 
-    def toJSON(self):
+    def toJSON(self,level=0):
       return {
         'id': self.id,
-        'inputs': [p.toJSON() for _, p in self.inputs.ports()],
-        'outputs': [p.toJSON() for _, p in self.outputs.ports()],
+        'inputs': [p.toJSON(level) for _, p in self.inputs.ports()],
+        'outputs': [p.toJSON(level) for _, p in self.outputs.ports()],
       }
 

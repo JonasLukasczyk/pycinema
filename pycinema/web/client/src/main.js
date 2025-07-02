@@ -18,6 +18,7 @@ const myApp = createApp(App)
 
 myApp.use(Quasar, {
   plugins: {Dialog}, // import Quasar plugins and add here
+  config:{dark: true}
 })
 
 // Assumes you have a <div id="app"></div> in your index.html

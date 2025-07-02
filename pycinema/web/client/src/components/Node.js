@@ -1,5 +1,6 @@
 import Base from './Base.js';
 import WebSocketCommunicator from './WebSocketCommunicator.js';
+import NodeEditor from './NodeEditor.js';
 
 const stopEvent = e=>{
   e.preventDefault();
@@ -61,7 +62,7 @@ class Node extends Base {
         p.input.mute = false;
         if(_==='input')
           input.addEventListener('change', ()=>{
-            !p.input.mute && WebSocketCommunicator.sendMessage( 'port_set_value', [p, parseFloat(p.input.value)] );
+            !p.input.mute && WebSocketCommunicator.sendMessage( 'port_set_value', [p, p.type.includes('int') ? parseFloat(p.input.value) : p.input.value] );
           });
         else
           input.setAttribute('readonly','true');
@@ -151,6 +152,7 @@ class Node extends Base {
 
     // port interactions
     {
+
       const port_discs = this.root.selectAll('circle');
       port_discs.on('mousedown', e=>{
         stopEvent(e);
@@ -160,12 +162,13 @@ class Node extends Base {
         stopEvent(e);
         port_interaction[1] = e.target.port;
         if(port_interaction[0].parent!==port_interaction[1].parent)
-          WebSocketCommunicator.sendMessage(
-            'connect_ports',
-            port_interaction
-          );
+          NodeEditor.requestAddConnection(port_interaction);
       });
     }
+  }
+
+  delete(){
+    this.root.remove();
   }
 
   clientToSVG(clientX, clientY, parent){
@@ -176,10 +179,11 @@ class Node extends Base {
     return p.matrixTransform(parent.getScreenCTM().inverse());
   }
 
-  setStatus(status){
+  setStatus(status,error){
+    this.filter.error = error;
     const node_status_line = this.div.node().getElementsByClassName('node_status_line')[0];
     const classes = node_status_line.classList;
-    for(let i=0;i<3;i++)
+    for(let i=0;i<4;i++)
       status===i
         ? classes.add('status'+status)
         : classes.remove('status'+i)
@@ -200,7 +204,6 @@ class Node extends Base {
     const root = this.svg.root;
     const scale = parseFloat(root.attr('transform').split('scale(').pop().split(')')[0]);
     const bb = this.div.node().getBoundingClientRect();
-    console.log(bb)
     this.xhtml
       .attr('width', bb.width/scale)
       .attr('height', bb.height/scale);

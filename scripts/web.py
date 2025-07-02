@@ -39,9 +39,26 @@ async def echo(websocket):
     if message['header'] == 'get_filter_list':
       await send_message('filter_list',[*filter_list],message['id'])
 
+    elif message['header'] == 'get_filters':
+      await send_message('filter_list',[f.toJSON() for f in pycinema.Core.Filter._filters],message['id'])
+
+    elif message['header'] == 'get_port_value':
+      f = [f for f in pycinema.Core.Filter._filters if f.id==message['payload']['parent']][0]
+      value = f.outputs.get(message['payload']['name']).toJSON(1)
+      await send_message(
+        'port_value',
+        value,
+        message['id']
+      )
+
     # create filter
     elif message['header'] == 'create_filter':
       f = filter_list[message['payload']]()
+
+    elif message['header'] == 'delete_filter':
+      filters = [f for f in pycinema.Core.Filter._filters if f.id in message['payload']]
+      for f in filters:
+        f.delete()
 
     # connect ports
     elif message['header'] == 'connect_ports':
@@ -70,7 +87,6 @@ async def echo(websocket):
       f = next(f for f in pycinema.filters.Filter._filters.values() if f.id == port['parent'])
       p = f.inputs.get(port['name']) if port['is_input'] else f.outputs.get(port['name'])
       p.set(value)
-      print(value)
 
     # if message.header == 'create_filter':
     #   f = pycinema.filters.CinemaDatabaseReader()
@@ -125,7 +141,7 @@ async def init():
     app = web.Application()
 
     # Serve static files from the 'dist' folder
-    app.router.add_static('/assets', path='pycinema/web/client/dist/assets', name='assets')
+    # app.router.add_static('/assets', path='pycinema/web/client/dist/assets', name='assets')
 
     app.router.add_get('/', static_file_handler)
 
@@ -136,6 +152,18 @@ async def init():
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', 8000)
     await site.start()
+
+    # p0 = pycinema.filters.PerformanceTest()
+    # p1 = pycinema.filters.PerformanceTest()
+    # p2 = pycinema.filters.PerformanceTest()
+
+    cr = pycinema.filters.CinemaDatabaseReader()
+    cr.inputs.path.set('/home/jones/2tb/projects/pycinema-data/sphere.cdb/');
+    q = pycinema.filters.TableQuery()
+    q.inputs.sql.set('Select * from input LIMIT 5')
+    q.inputs.table.set(cr.outputs.table)
+    ir = pycinema.filters.ImageReader()
+    ir.inputs.table.set(q.outputs.table)
 
     print("Serving static files and WebSocket server on ws://localhost:8765 and http://localhost:8000")
 

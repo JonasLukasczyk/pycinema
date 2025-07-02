@@ -3,89 +3,49 @@ import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 
 import Scene from './Scene.js'
 import WebSocketCommunicator from './WebSocketCommunicator.js'
+import NodeEditor from './NodeEditor.js'
 import { useQuasar } from 'quasar'
 const $q = useQuasar();
 
 const svg_canvas = ref(null);
 const filter_browser = ref(null);
-
-const iProps = reactive ({
-  server_busy: false,
-  filter_browser: {
-    list: [],
-    list_: [],
-    selected: null,
-    search: (val, update) => {
-      if (val === '')
-        update(() => {
-          iProps.filter_browser.list_ = iProps.filter_browser.list;
-        });
-      else
-        update(() => {
-          const needle = val.toLowerCase()
-          iProps.filter_browser.list_ = iProps.filter_browser.list.filter(v => v.toLowerCase().indexOf(needle) > -1);
-        });
-    }
-  },
-  scene: null
-});
-
-const requestCreateFilter = type=>{
-  if(!type) return;
-  iProps.filter_browser.selected = null;
-  WebSocketCommunicator.sendMessage('create_filter',type);
-};
+const node_editor_container = ref(null);
 
 const init = async ()=>{
-  iProps.scene = new Scene( svg_canvas.value, $q );
-
-
-  WebSocketCommunicator.on('open', async ()=>{
-    console.log("Connected to WebSocket server");
-    const msg = await WebSocketCommunicator.sendMessageAsync('get_filter_list');
-    iProps.filter_browser.list = msg.payload;
-
-    requestCreateFilter('PerformanceTest');
-    requestCreateFilter('PerformanceTest');
-    requestCreateFilter('PerformanceTest');
-
-  });
-
-  WebSocketCommunicator.on('message', msg=>{
-    switch(msg.header){
-      case 'update_status':
-        console.log('update_status',msg)
-        return iProps.server_busy = !msg.payload;
-    }
-  });
+  NodeEditor.props.scene = new Scene( svg_canvas.value, $q );
+  node_editor_container.value.focus();
 }
 
 const openFilterBrowserDialog = ()=>{
   filter_browser._value.showPopup();
 }
 
+const keypress = e=>{
+  if(e.code==='Delete'){
+    const nodes = NodeEditor.props.scene.getSelectedNodes();
+    NodeEditor.requestDeleteFilter(nodes.map(n=>n.filter.id));
+  }
+}
+
 onMounted(init);
-onUnmounted(()=>{
-  // iProps.filter_browser.watcher();
-});
+// onUnmounted();
 
 </script>
 
 <template>
-  <div class='node_editor_container'>
+  <div class='node_editor_container' ref='node_editor_container' @keypress='keypress' tabindex="0">
     <div style='position:absolute;top:20px;left:20px'>
-      <q-btn v-show='!iProps.server_busy' icon='sym_o_menu' dense round color="primary" @click='openFilterBrowserDialog'/>
-      <q-btn v-show='iProps.server_busy' icon='hourglass_bottom' class='rotating' dense round color="primary" />
+      <q-btn v-show='!NodeEditor.props.server_busy' size='lg' icon='sym_o_menu' dense round color="primary" @click='openFilterBrowserDialog'/>
+      <q-btn v-show='NodeEditor.props.server_busy'  size='lg' icon='hourglass_bottom' class='rotating' dense round color="primary" />
 
       <q-select
-        dark
         ref='filter_browser'
         use-input
-        v-model="iProps.filter_browser.selected"
+        v-model="NodeEditor.props.filter_browser.selected"
         input-debounce="0"
-        :options="iProps.filter_browser.list_"
-        @filter="iProps.filter_browser.search"
-        @update:model-value='requestCreateFilter'
+        :options="NodeEditor.props.filter_browser.list_"
+        @filter="NodeEditor.props.filter_browser.search"
+        @update:model-value='NodeEditor.requestCreateFilter'
         style="width: 250px;display:none"
         behavior="dialog"
         label-color='white'
@@ -122,7 +82,7 @@ onUnmounted(()=>{
 }
 
 .node_content {
-  background-color: #555;
+  background-color: #444;
   /*background-color: rgba(50,50,50,0.8);*/
   border-radius: 0.75em;
   display: inline-block;
@@ -145,15 +105,32 @@ onUnmounted(()=>{
   background-color: #aaa;
 }
 .status1 {
-  background-color: limegreen;
+  background-color: #aaa;
+  background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.25) 25%, transparent 25%, transparent 50%, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.25) 75%, transparent 75%, transparent);
+  animation: barStripe 0.5s linear infinite;
 }
 .status2 {
+  background-color: limegreen;
+}
+
+.status3 {
   background-color: #c00;
 }
 
 .node_status_line {
   height: 0.4em;
   margin: 0.1em -1em 1em -1em;
+  box-sizing: border-box;
+  background-size: 1em 1em;
+}
+
+@keyframes barStripe {
+  0% {
+    background-position: 1em 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 
 .selected {
@@ -167,6 +144,26 @@ onUnmounted(()=>{
   margin: 0.2em 0;
   display: flex;
   align-items: center;
+
+  box-sizing: border-box;
+    line-height: 1;
+  transform-origin: center;
+}
+
+@keyframes pop {
+0% {
+    background-color: #333; /* Color A */
+  }
+  50% {
+    background-color: #888; /* Color B */
+  }
+  100% {
+    background-color: #333; /* Color A */
+  }
+}
+
+.pop {
+  animation: pop 0.5s ease;
 }
 
 .input_port input:read-only, .output_port input:read-only {
