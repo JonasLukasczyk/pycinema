@@ -293,6 +293,10 @@ class Port():
             return
         for listener in self._listeners[eventName]:
             if asyncio.iscoroutinefunction(listener):
+                try:
+                    asyncio.get_running_loop()
+                except RuntimeError:
+                    raise RuntimeError("No running event loop. Wrap in asyncio.run or call from async context.")
                 asyncio.create_task(listener(data))
             else:
                 listener(data)
@@ -367,7 +371,7 @@ class Port():
 
         # if value of a port was changed trigger update of listeners
         if self.is_input and update and not Filter._processing:
-            self.parent.update()
+            asyncio.create_task(self.parent.update())
 
     def toJSON(self):
       value_raw = self.get()
@@ -447,6 +451,16 @@ class Filter():
                 asyncio.create_task(listener(data))
             else:
                 listener(data)
+    @staticmethod
+    async def triggerAsync(eventName, data):
+        if not eventName in Filter._listeners:
+            return
+        for listener in Filter._listeners[eventName]:
+            if asyncio.iscoroutinefunction(listener):
+                asyncio.create_task(listener(data))
+            else:
+                listener(data)
+        await asyncio.sleep(0)
 
     def __init__(self, inputs={}, outputs={}):
         if Filter._debug:
@@ -540,8 +554,10 @@ class Filter():
                   S.append(m)
       return L
 
-    def update(self):
+    async def update(self):
         if Filter._processing: return 0
+
+        await Filter.triggerAsync('update_status',0)
 
         Filter._processing = True
 
@@ -557,6 +573,8 @@ class Filter():
               print('  ',f,edges[f])
             print("--------------------------------")
 
+        await Filter.triggerAsync('filter_status',[-1,0])
+
         for i,f in enumerate(filters):
             lt = f.time
             needsUpdate = False
@@ -569,6 +587,7 @@ class Filter():
                     needsUpdate = True
             if f==self or needsUpdate:
                 t0 = time.time()
+                await Filter.triggerAsync('filter_status',[f.id,0])
                 if Filter._debug:
                     print('PROCESS',f)
                 try:
@@ -576,14 +595,19 @@ class Filter():
                 except Exception:
                     traceback.print_exc()
                     Filter._processing = False
+                    await Filter.triggerAsync('filter_status',[f.id,2])
+                    await Filter.triggerAsync('update_status',1)
                     return 0
                 f.time = time.time()
+
                 if Filter._debug:
                     print(" -> Done (%.2fs)" % (f.time-t0))
             elif Filter._debug:
                 print('SKIP',f)
+            await Filter.triggerAsync('filter_status',[f.id,1])
 
         Filter._processing = False
+        await Filter.triggerAsync('update_status',1)
         return 1
 
     def help(self):

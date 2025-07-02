@@ -10,7 +10,7 @@ const svg_canvas = ref(null);
 const filter_browser = ref(null);
 
 const iProps = reactive ({
-  communicator: null,
+  server_busy: false,
   filter_browser: {
     list: [],
     list_: [],
@@ -39,22 +39,24 @@ const requestCreateFilter = type=>{
 const init = async ()=>{
   iProps.scene = new Scene( svg_canvas.value, $q );
 
-  // communicator
-  WebSocketCommunicator.on('message', msg=>{
-    switch(msg.header){
-      case 'filter_list':
-        return iProps.filter_browser.list = msg.payload;
-    }
+
+  WebSocketCommunicator.on('open', async ()=>{
+    console.log("Connected to WebSocket server");
+    const msg = await WebSocketCommunicator.sendMessageAsync('get_filter_list');
+    iProps.filter_browser.list = msg.payload;
+
+    requestCreateFilter('PerformanceTest');
+    requestCreateFilter('PerformanceTest');
+    requestCreateFilter('PerformanceTest');
+
   });
 
-  WebSocketCommunicator.on('open', ()=>{
-    console.log("Connected to WebSocket server");
-    WebSocketCommunicator.sendMessage('get_filter_list');
-
-    // requestCreateFilter('CinemaDatabaseReader');
-    // requestCreateFilter('TableQuery');
-    // requestCreateFilter('ImageReader');
-
+  WebSocketCommunicator.on('message', msg=>{
+    switch(msg.header){
+      case 'update_status':
+        console.log('update_status',msg)
+        return iProps.server_busy = !msg.payload;
+    }
   });
 }
 
@@ -72,8 +74,8 @@ onUnmounted(()=>{
 <template>
   <div class='node_editor_container'>
     <div style='position:absolute;top:20px;left:20px'>
-      <q-btn label='+' dense round color="primary" @click='openFilterBrowserDialog'/>
-      <!--<q-btn label='L' dense round color="primary" @click='openFilterBrowserDialog'/>-->
+      <q-btn v-show='!iProps.server_busy' icon='sym_o_menu' dense round color="primary" @click='openFilterBrowserDialog'/>
+      <q-btn v-show='iProps.server_busy' icon='hourglass_bottom' class='rotating' dense round color="primary" />
 
       <q-select
         dark
@@ -96,10 +98,10 @@ onUnmounted(()=>{
     <svg class='node_editor_canvas' ref='svg_canvas' style="width:100%;height:100%">
       <defs>
         <pattern id="inner-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-          <rect width="100%" height="100%" fill="none" stroke="#666" stroke-width="0.5" />
+          <rect width="100%" height="100%" fill="none" stroke="#444" stroke-width="0.5" />
         </pattern>
         <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-          <rect width="100%" height="100%" fill="url(#inner-grid)" stroke="#666" stroke-width="1.5" />
+          <rect width="100%" height="100%" fill="url(#inner-grid)" stroke="#444" stroke-width="1.5" />
         </pattern>
       </defs>
     </svg>
@@ -137,6 +139,21 @@ onUnmounted(()=>{
   font-weight:bold;
   text-align: center;
   cursor:pointer;
+}
+
+.status0 {
+  background-color: #aaa;
+}
+.status1 {
+  background-color: limegreen;
+}
+.status2 {
+  background-color: #c00;
+}
+
+.node_status_line {
+  height: 0.4em;
+  margin: 0.1em -1em 1em -1em;
 }
 
 .selected {

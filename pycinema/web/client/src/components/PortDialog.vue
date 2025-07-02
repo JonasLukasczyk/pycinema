@@ -19,7 +19,12 @@ defineEmits([
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
 const init = ()=>{
-  for(let image of props.port.value){
+
+  const values = Array.isArray(props.port.value) ? props.port.value : [props.port.value];
+
+  for(let image of values){
+    if(!image.hasOwnProperty('channels')) continue;
+
     const canvas = document.createElement('canvas');
     canvasContainer._value.appendChild(canvas);
 

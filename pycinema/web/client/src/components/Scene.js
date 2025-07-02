@@ -36,13 +36,16 @@ class Scene {
 
     // communicator
     WebSocketCommunicator.on('message', msg=>{
+      console.log(msg)
       switch(msg.header){
         case 'filter_created':
           return this.addNode(msg.payload);
         case 'connection_added':
           return this.addEdge(msg.payload);
+        case 'filter_status':
+          return this.setStatus(msg.payload);
         case 'value_set':
-          const port = msg.payload;
+          const port = msg.payload[0];
           const node = this.nodes.get(port.parent);
           const port_ = node.filter[port.is_input?'inputs':'outputs'].find(i=>i.name===port.name);
           for(let key of Object.keys(port))
@@ -130,6 +133,14 @@ class Scene {
       component: PortDialog,
       componentProps: {port:port}
     });
+  }
+
+  setStatus([id,status]){
+    if(id<0){
+      this.nodes.forEach(n=>n.setStatus(status));
+    } else {
+      this.nodes.get(id).setStatus(status);
+    }
   }
 
   addNode(filter){

@@ -5,6 +5,7 @@ import { Quasar,Dialog } from 'quasar'
 import '@quasar/extras/material-icons/material-icons.css'
 import '@quasar/extras/material-icons-outlined/material-icons-outlined.css'
 import '@quasar/extras/material-icons-round/material-icons-round.css'
+import '@quasar/extras/material-symbols-outlined/material-symbols-outlined.css'
 
 // Import Quasar css
 import 'quasar/dist/quasar.css'

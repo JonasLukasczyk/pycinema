@@ -3,14 +3,6 @@
 # import asyncio
 # from websockets.asyncio.server import serve
 
-# async def echo(websocket):
-#     async for message in websocket:
-#         await websocket.send(message)
-
-# async def main():
-#     async with serve(echo, "localhost", 8765) as server:
-#         await server.serve_forever()
-
 import json
 import os
 import asyncio
@@ -30,7 +22,6 @@ VIEW = { 'VERSION' : '1.0'}
 # reporting
 print("view v" + VIEW["VERSION"])
 
-# WebSocket echo handler
 
 filter_list = dict([(name, cls) for name, cls in pycinema.filters.__dict__.items() if isinstance(cls,type) and issubclass(cls,pycinema.Core.Filter) and len(cls.__subclasses__())<1])
 
@@ -48,8 +39,11 @@ async def echo(websocket):
     if message['header'] == 'get_filter_list':
       await send_message('filter_list',[*filter_list],message['id'])
 
+    # create filter
     elif message['header'] == 'create_filter':
       f = filter_list[message['payload']]()
+
+    # connect ports
     elif message['header'] == 'connect_ports':
       f0_id = message['payload'][0]['parent']
       f1_id = message['payload'][1]['parent']
@@ -69,6 +63,7 @@ async def echo(websocket):
         p0,p1 = p1,p0
 
       p0.set(p1)
+
     elif message['header'] == 'port_set_value':
       port = message['payload'][0]
       value = message['payload'][1]
@@ -107,22 +102,24 @@ async def send_message(header,payload,id=-1):
   for socket in to_remove:
     websocket_list.remove(socket)
 
-async def filter_created(filter):
-  await send_message('filter_created',filter.toJSON())
 
-async def filter_removed():
-  return
+def serialize(obj):
+    """Recursively serialize an object, converting any with .toJSON() to JSON-serializable form."""
+    if hasattr(obj, 'toJSON') and callable(obj.toJSON):
+        return serialize(obj.toJSON())  # Recursively serialize the result of toJSON()
+    elif isinstance(obj, dict):
+        return {serialize(k): serialize(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple, set)):
+        return [serialize(item) for item in obj]
+    elif isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    else:
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
-async def connection_added(ports):
-  await send_message('connection_added',[p.toJSON() for p in ports])
-
-# /home/jones/projects/cinema-lib/pycinema/data/sphere.cdb/
-
-async def value_set(data):
-  await send_message('value_set',data[0].toJSON())
-
-async def connection_removed():
-  return
+def make_async(event_name):
+    async def listener(data):
+        await send_message(event_name, serialize(data))
+    return listener
 
 async def init():
     app = web.Application()
@@ -142,19 +139,21 @@ async def init():
 
     print("Serving static files and WebSocket server on ws://localhost:8765 and http://localhost:8000")
 
-    pycinema.Filter.on('filter_created', filter_created)
-    pycinema.Filter.on('filter_deleted', filter_removed)
-    pycinema.Filter.on('value_set', value_set)
-    pycinema.Filter.on('connection_added', connection_added)
-    pycinema.Filter.on('connection_removed', connection_removed)
+    commands = [
+      'filter_created',
+      'filter_deleted',
+      'filter_status',
+      'value_set',
+      'connection_added',
+      'connection_removed',
+      'update_status'
+    ]
 
-    # CinemaDatabaseReader_0.inputs.path.set("/home/jones/projects/cinema-lib/pycinema/data/scalar-images.cdb", False)
-    # CinemaDatabaseReader_0.update()
+    for c in commands:
+      pycinema.Filter.on(c, make_async(c))
 
-    # Keep the event loop running for the WebSocket server
     await websocket_server.wait_closed()
 
 # Run the app
 if __name__ == "__main__":
     asyncio.run(init())
-

@@ -38,7 +38,14 @@ class Node extends Base {
       .attr('class','node_content')
     ;
 
-    this.div._groups[0][0].appendChild(createElementFromHTML(`<h1>${filter.id}</h1>`));
+    // const table = createElementFromHTML('<table><tr><td></td><td></td></tr></table>');
+    // this.div.node().appendChild(table);
+    // const row = table.getElementsByTagName('tr')[0];
+    // row.children[0].appendChild(createElementFromHTML(`<i></i>`));
+    // row.children[1].appendChild(createElementFromHTML(`<h1>${filter.id}</h1>`));
+
+    this.div.node().appendChild(createElementFromHTML(`<h1>${filter.id}</h1>`));
+    this.div.node().appendChild(createElementFromHTML(`<div class='node_status_line'></div>`));
     for(let _ of ['output','input'])
       for(let p of this.filter[_+'s']){
         const label = document.createElement('label');
@@ -54,7 +61,7 @@ class Node extends Base {
         p.input.mute = false;
         if(_==='input')
           input.addEventListener('change', ()=>{
-            !p.input.mute && WebSocketCommunicator.sendMessage( 'port_set_value', [p, p.input.value] );
+            !p.input.mute && WebSocketCommunicator.sendMessage( 'port_set_value', [p, parseFloat(p.input.value)] );
           });
         else
           input.setAttribute('readonly','true');
@@ -63,13 +70,13 @@ class Node extends Base {
         div.className = _+'_port';
         div.appendChild(_==='input'?label:input);
         div.appendChild(_==='input'?input:label);
-        this.div._groups[0][0].appendChild(div);
+        this.div.node().appendChild(div);
       }
 
     // make node dragable
-    const root_dom = this.svg.root._groups[0][0];
+    const root_dom = this.svg.root.node();
     {
-      const svg_js = this.svg._groups[0][0];
+      const svg_js = this.svg.node();
 
       const node_head = this.div.select('h1');
 
@@ -162,11 +169,22 @@ class Node extends Base {
   }
 
   clientToSVG(clientX, clientY, parent){
-    const svg_js = this.svg._groups[0][0];
+    const svg_js = this.svg.node();
     var p = svg_js.createSVGPoint();
     p.x = clientX;
     p.y = clientY;
     return p.matrixTransform(parent.getScreenCTM().inverse());
+  }
+
+  setStatus(status){
+    const node_status_line = this.div.node().getElementsByClassName('node_status_line')[0];
+    const classes = node_status_line.classList;
+    for(let i=0;i<3;i++)
+      status===i
+        ? classes.add('status'+status)
+        : classes.remove('status'+i)
+      ;
+
   }
 
   getPos(){
@@ -182,6 +200,7 @@ class Node extends Base {
     const root = this.svg.root;
     const scale = parseFloat(root.attr('transform').split('scale(').pop().split(')')[0]);
     const bb = this.div.node().getBoundingClientRect();
+    console.log(bb)
     this.xhtml
       .attr('width', bb.width/scale)
       .attr('height', bb.height/scale);
