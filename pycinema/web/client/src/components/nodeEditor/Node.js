@@ -1,6 +1,6 @@
 import Base from './Base.js';
-import WebSocketCommunicator from './WebSocketCommunicator.js';
-import NodeEditor from './NodeEditor.js';
+import WebSocketCommunicator from '../../WebSocketCommunicator.js';
+import App from '../../App.js';
 
 const stopEvent = e=>{
   e.preventDefault();
@@ -162,7 +162,7 @@ class Node extends Base {
         stopEvent(e);
         port_interaction[1] = e.target.port;
         if(port_interaction[0].parent!==port_interaction[1].parent)
-          NodeEditor.requestAddConnection(port_interaction);
+          App.requestAddConnection(port_interaction);
       });
     }
   }

@@ -10,6 +10,9 @@ from aiohttp import web
 import websockets
 from websockets.asyncio.server import serve
 
+import zlib
+import base64
+
 import pycinema
 import pycinema.filters
 
@@ -25,6 +28,18 @@ print("view v" + VIEW["VERSION"])
 
 filter_list = dict([(name, cls) for name, cls in pycinema.filters.__dict__.items() if isinstance(cls,type) and issubclass(cls,pycinema.Core.Filter) and len(cls.__subclasses__())<1])
 
+def get_by_path(obj, path):
+    for key in path:
+        if isinstance(obj, dict):
+            obj = obj[key]
+        elif isinstance(obj, list):
+            obj = obj[int(key)]
+        elif hasattr(obj,key):
+            obj = getattr(obj,key)
+        else:
+            raise TypeError(f"Invalid path element '{key}' for type {type(obj)}")
+    return obj
+
 websocket_list = []
 async def echo(websocket):
   print('connected')
@@ -34,7 +49,7 @@ async def echo(websocket):
   i = 0
   async for message_raw in websocket:
     message = json.loads(message_raw)
-    print(i,message)
+    # print(i,message)
     i+=1
     if message['header'] == 'get_filter_list':
       await send_message('filter_list',[*filter_list],message['id'])
@@ -43,11 +58,24 @@ async def echo(websocket):
       await send_message('filter_list',[f.toJSON() for f in pycinema.Core.Filter._filters],message['id'])
 
     elif message['header'] == 'get_port_value':
-      f = [f for f in pycinema.Core.Filter._filters if f.id==message['payload']['parent']][0]
-      value = f.outputs.get(message['payload']['name']).toJSON(1)
+      filter_id = message['payload'][0]
+      port_name = message['payload'][1]
+      path = message['payload'][2]
+      f = [f for f in pycinema.Core.Filter._filters if f.id==filter_id][0]
+      arr = get_by_path(
+        f.outputs.get(port_name).get(),
+        path
+      )
+
+      value_b64 = {
+        'data': base64.b64encode(arr.tobytes()).decode('utf-8'),
+        'dtype': str(arr.dtype),
+        'shape': arr.shape
+      }
+
       await send_message(
         'port_value',
-        value,
+        value_b64,
         message['id']
       )
 
@@ -108,10 +136,13 @@ async def send_message(header,payload,id=-1):
     'header': header,
     'payload': payload
   })
+  msg_compressed = zlib.compress(msg.encode('utf-8'))
+  msg_compressed_b64 = base64.b64encode(msg_compressed).decode('utf-8')
+
   to_remove = []
   for socket in websocket_list:
     try:
-      await socket.send(msg)
+      await socket.send(msg_compressed_b64)
     except:
       to_remove.append(socket)
 
@@ -164,6 +195,9 @@ async def init():
     q.inputs.table.set(cr.outputs.table)
     ir = pycinema.filters.ImageReader()
     ir.inputs.table.set(q.outputs.table)
+    iv = pycinema.filters.ImageView()
+    iv.inputs.images.set(ir.outputs.images)
+
 
     print("Serving static files and WebSocket server on ws://localhost:8765 and http://localhost:8000")
 

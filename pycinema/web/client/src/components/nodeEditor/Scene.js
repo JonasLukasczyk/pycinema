@@ -1,13 +1,13 @@
 import Node from './Node.js';
 import Edge from './Edge.js';
-import WebSocketCommunicator from './WebSocketCommunicator.js';
-import NodeEditor from './NodeEditor.js';
+import WebSocketCommunicator from '../../WebSocketCommunicator.js';
+import App from '../../App.js';
 import { instance } from "@viz-js/viz";
 
 import { watch } from "vue";
 
-import PortDialog from './PortDialog.vue';
-import ConfirmationDialog from './ConfirmationDialog.vue';
+import PortDialog from '../PortDialog.vue';
+import ConfirmationDialog from '../ConfirmationDialog.vue';
 
 import * as d3 from 'd3';
 
@@ -33,20 +33,20 @@ class Scene {
 
   update(){
     // remove deleted nodes
-    const filterIds = NodeEditor.props.filters.map(f=>f.id);
+    const filterIds = App.props.filters.map(f=>f.id);
     for(let id of [...this.nodes.values()].map(n => n.filter.id))
       !filterIds.includes(id) && this.removeNode(id);
 
     // add new nodes
-    for(let f of NodeEditor.props.filters)
+    for(let f of App.props.filters)
       !this.nodes.has(f.id) && this.addNode(f);
 
     // update edges
-    for(let f of NodeEditor.props.filters){
+    for(let f of App.props.filters){
       for(let i of f.inputs){
         if(i.portRef)
           this.addEdge([
-            NodeEditor.props.filters.filter(f=>f.id===i.portRef.parent)[0].outputs.filter(o=>o.name===i.portRef.name)[0],
+            App.props.filters.filter(f=>f.id===i.portRef.parent)[0].outputs.filter(o=>o.name===i.portRef.name)[0],
             i
           ]);
       }
@@ -151,7 +151,7 @@ class Scene {
 
     this.svg.call(zoom).call(zoom.transform, d3.zoomIdentity);
 
-    watch(()=>NodeEditor.props.filters, ()=>this.update());
+    watch(()=>App.props.filters, ()=>this.update());
   }
 
   getSelectedNodes(){

@@ -190,6 +190,15 @@ def getTableExtent(table):
     except:
         return (-1,-1)
 
+
+import base64
+def encodeNumpyArray(arr):
+  return {
+    'data': base64.b64encode(arr.tobytes()).decode('utf-8'),
+    'dtype': str(arr.dtype),
+    'shape': arr.shape
+  }
+
 ################################################################################
 # Image Class
 ################################################################################
@@ -241,22 +250,36 @@ class Image():
 
     def toJSON(self,level=0):
       data = {'meta':{},'channels':{}}
-      if level<1:
-        for key in self.meta:
-          data['meta'][key] = None
-        for c in self.channels:
-          data['channels'][c] = {
-            'shape': self.channels[c].shape
-          }
-      else:
-        for g in data:
-          g_ = getattr(self,g)
-          for id in g_:
-            try:
-              json.dumps(g_[id])
-              data[g][id] = g_[id]
-            except TypeError:
-              data[g][id] = g_[id].tolist()
+      for key in self.meta:
+        if hasattr(self.meta[key], 'tolist'):
+          data['meta'][key] = self.meta[key].tolist()
+        else:
+          data['meta'][key] = self.meta[key]
+      for channel in self.channels:
+        if hasattr(self.channels[channel], 'tolist'):
+          data['channels'][channel] = 'DATA POINTER'
+          # data['channels'][channel] = encodeNumpyArray(self.channels[channel])
+          # data['channels'][key] = self.channels[channel].tolist()
+        else:
+          data['channels'][channel] = self.channels[channel]
+
+      # if level<1:
+      #   for key in self.meta:
+      #     data['meta'][key] = None
+      #   for c in self.channels:
+      #     data['channels'][c] = {
+      #       'shape': self.channels[c].shape
+      #     }
+      # else:
+      #   for g in data:
+      #     g_ = getattr(self,g)
+      #     for id in g_:
+      #       try:
+      #         json.dumps(g_[id])
+      #         data[g][id] = g_[id]
+      #       except TypeError:
+      #         data[g][id] = []
+      #         # data[g][id] = g_[id].tolist()
 
       return data
 

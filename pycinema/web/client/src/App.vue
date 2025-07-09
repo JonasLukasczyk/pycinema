@@ -1,12 +1,29 @@
 <script setup>
-import NodeEditor from './components/NodeEditor.vue'
+
+import {reactive} from 'vue';
+import Tile from './components/Tile.vue'
+import App from './App.js'
+
 </script>
 
+
 <template>
-  <NodeEditor/>
+  <div class="app-container">
+    <Tile :node="App.props.layout" />
+  </div>
 </template>
 
 <style>
+
+.app-container {
+  height: 100%;
+  width: 100%;
+
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
 .material-symbols-outlined {
   font-variation-settings:
     'FILL' 0,

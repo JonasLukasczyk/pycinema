@@ -2,8 +2,8 @@
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 
 import Scene from './Scene.js'
-import WebSocketCommunicator from './WebSocketCommunicator.js'
-import NodeEditor from './NodeEditor.js'
+import WebSocketCommunicator from '../../WebSocketCommunicator.js'
+import App from '../../App.js'
 import { useQuasar } from 'quasar'
 const $q = useQuasar();
 
@@ -12,7 +12,7 @@ const filter_browser = ref(null);
 const node_editor_container = ref(null);
 
 const init = async ()=>{
-  NodeEditor.props.scene = new Scene( svg_canvas.value, $q );
+  App.props.scene = new Scene( svg_canvas.value, $q );
   node_editor_container.value.focus();
 }
 
@@ -22,8 +22,8 @@ const openFilterBrowserDialog = ()=>{
 
 const keypress = e=>{
   if(e.code==='Delete'){
-    const nodes = NodeEditor.props.scene.getSelectedNodes();
-    NodeEditor.requestDeleteFilter(nodes.map(n=>n.filter.id));
+    const nodes = App.props.scene.getSelectedNodes();
+    App.requestDeleteFilter(nodes.map(n=>n.filter.id));
   }
 }
 
@@ -35,17 +35,17 @@ onMounted(init);
 <template>
   <div class='node_editor_container' ref='node_editor_container' @keypress='keypress' tabindex="0">
     <div style='position:absolute;top:20px;left:20px'>
-      <q-btn v-show='!NodeEditor.props.server_busy' size='lg' icon='sym_o_menu' dense round color="primary" @click='openFilterBrowserDialog'/>
-      <q-btn v-show='NodeEditor.props.server_busy'  size='lg' icon='hourglass_bottom' class='rotating' dense round color="primary" />
+      <q-btn v-show='!App.props.server_busy' size='lg' icon='sym_o_menu' dense round color="primary" @click='openFilterBrowserDialog'/>
+      <q-btn v-show='App.props.server_busy'  size='lg' icon='hourglass_bottom' class='rotating' dense round color="primary" />
 
       <q-select
         ref='filter_browser'
         use-input
-        v-model="NodeEditor.props.filter_browser.selected"
+        v-model="App.props.filter_browser.selected"
         input-debounce="0"
-        :options="NodeEditor.props.filter_browser.list_"
-        @filter="NodeEditor.props.filter_browser.search"
-        @update:model-value='NodeEditor.requestCreateFilter'
+        :options="App.props.filter_browser.list_"
+        @filter="App.props.filter_browser.search"
+        @update:model-value='App.requestCreateFilter'
         style="width: 250px;display:none"
         behavior="dialog"
         label-color='white'

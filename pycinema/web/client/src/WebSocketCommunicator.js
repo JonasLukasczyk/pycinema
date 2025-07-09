@@ -34,8 +34,19 @@ const WebSocketCommunicator = {
   },
 };
 
-WebSocketCommunicator.socket.onmessage = event=>{
-  const msg = JSON.parse(event.data);
+import { inflate } from 'pako';
+
+function decompressWithPako(base64String) {
+  const compressed = Uint8Array.from(atob(base64String), c => c.charCodeAt(0));
+  const decompressed = inflate(compressed);
+  return new TextDecoder().decode(decompressed);
+}
+
+WebSocketCommunicator.socket.onmessage = async event=>{
+  const msg_raw = decompressWithPako(event.data);
+  const msg = JSON.parse(msg_raw);
+  // console.log(msg)
+  // const msg = JSON.parse(event.data);
   if(WebSocketCommunicator.promises.has(msg.id)){
     const promise = WebSocketCommunicator.promises.get(msg.id);
     WebSocketCommunicator.promises.delete(msg.id);

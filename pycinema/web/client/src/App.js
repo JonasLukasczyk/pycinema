@@ -1,12 +1,18 @@
 import {reactive} from 'vue';
-
 import WebSocketCommunicator from './WebSocketCommunicator.js';
 
-const NodeEditor = {
+const App = {
   props: reactive({
-    server_busy: false,
+    layout: {
+      direction: 'horizontal',
+      components: [
+        ['NodeEditor',null]
+      ],
+    },
 
     scene: null,
+
+    server_busy: false,
 
     filters: [],
 
@@ -21,7 +27,7 @@ const NodeEditor = {
           });
         else
           update(() => {
-            const needle = val.toLowerCase()
+            const needle = val.toLowerCase();
             NodeEditor.props.filter_browser.list_ = NodeEditor.props.filter_browser.list.filter(v => v.toLowerCase().indexOf(needle) > -1);
           });
       }
@@ -35,7 +41,6 @@ const NodeEditor = {
   },
 
   requestDeleteFilter: filter_ids=>{
-    console.log(filter_ids)
     WebSocketCommunicator.sendMessage('delete_filter',filter_ids);
   },
   requestAddConnection: ports=>{
@@ -46,15 +51,16 @@ const NodeEditor = {
   },
 };
 
+
 WebSocketCommunicator.on('open', async ()=>{
     console.log("Connected to WebSocket server");
     {
       const msg = await WebSocketCommunicator.sendMessageAsync('get_filter_list');
-      NodeEditor.props.filter_browser.list = msg.payload;
+      App.props.filter_browser.list = msg.payload;
     }
     {
       const msg = await WebSocketCommunicator.sendMessageAsync('get_filters');
-      NodeEditor.props.filters = NodeEditor.props.filters.concat(msg.payload);
+      App.props.filters = App.props.filters.concat(msg.payload);
     }
   });
 
@@ -62,14 +68,19 @@ WebSocketCommunicator.on('message', msg=>{
   console.log(msg)
   switch(msg.header){
     case 'update_status':
-      return NodeEditor.props.server_busy = !msg.payload;
+      return App.props.server_busy = !msg.payload;
     case 'filter_created':
-      return NodeEditor.props.filters = NodeEditor.props.filters.concat([msg.payload]);
+      return App.props.filters = App.props.filters.concat([msg.payload]);
     case 'filter_deleted':
-      return NodeEditor.props.filters = NodeEditor.props.filters.filter(f=>f.id!==msg.payload.id);
+      return App.props.filters = App.props.filters.filter(f=>f.id!==msg.payload.id);
     // case 'connection_added':
     //   return NodeEditor.props.filters = NodeEditor.props.filters.filter(f=>f.id!==msg.payload.id);
   }
 });
 
-export default NodeEditor;
+
+// setTimeout(function() {
+//   App.props.layout.components.push(['ImageView','ImageView_0'])
+// }, 1000);
+
+export default App;

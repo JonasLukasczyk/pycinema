@@ -157,11 +157,11 @@ except NameError:
 class ImageView(Filter):
 
     def __init__(self):
-        self.scene = QtWidgets.QGraphicsScene()
-        self.requiresFit = True
-        self.widgets = []
-        self.time_images = -2
-        self.image_items = []
+        # self.scene = QtWidgets.QGraphicsScene()
+        # self.requiresFit = True
+        # self.widgets = []
+        # self.time_images = -2
+        # self.image_items = []
 
         Filter.__init__(
           self,
@@ -218,31 +218,31 @@ class ImageView(Filter):
         images = self.inputs.images.get()
         nImages = len(images)
 
-        # update images if necessary
-        if self.time_images!=self.inputs.images.getTime():
-          self.time_images = self.inputs.images.getTime()
+        # # update images if necessary
+        # if self.time_images!=self.inputs.images.getTime():
+        #   self.time_images = self.inputs.images.getTime()
 
-          for i in self.image_items:
-            self.scene.removeItem(i)
-          self.image_items = []
+        #   for i in self.image_items:
+        #     self.scene.removeItem(i)
+        #   self.image_items = []
 
-          if nImages > 0:
-            self.addImages( images )
-          else:
-            log.warning(" no images to lay out.")
+        #   if nImages > 0:
+        #     self.addImages( images )
+        #   else:
+        #     log.warning(" no images to lay out.")
 
         # update selection
         selection = self.inputs.selection.get()
-        for i in self.image_items:
-          i.highlight = i.id in selection
+        # for i in self.image_items:
+        #   i.highlight = i.id in selection
 
         self.outputs.images.set([ i for i in images if i.meta['id'] in selection ])
 
-        self.scene.update()
+        # self.scene.update()
 
-        if self.requiresFit:
-          for w in self.widgets:
-            w.fitInView()
-          self.requiresFit = False
+        # if self.requiresFit:
+        #   for w in self.widgets:
+        #     w.fitInView()
+        #   self.requiresFit = False
 
         return 1
